@@ -178,21 +178,17 @@ pub async fn get_client_module_options_context(
     let decorators_options = get_decorators_transform_options(project_path);
     let mdx_rs_options = *next_config.mdx_rs().await?;
     let jsx_runtime_options = get_jsx_transform_options(project_path);
-    let enable_webpack_loaders = {
-        let options = &*next_config.webpack_loaders_options().await?;
-        let loaders_options = WebpackLoadersOptions {
-            extension_to_loaders: options.clone(),
+    let webpack_rules =
+        *maybe_add_babel_loader(project_path, *next_config.webpack_rules().await?).await?;
+    let enable_webpack_loaders = webpack_rules.map(|rules| {
+        WebpackLoadersOptions {
+            rules,
             loader_runner_package: Some(get_external_next_compiled_package_mapping(
                 StringVc::cell("loader-runner".to_owned()),
             )),
-            placeholder_for_future_extensions: (),
         }
-        .cell();
-
-        maybe_add_babel_loader(project_path, loaders_options)
-            .await?
-            .clone_if()
-    };
+        .cell()
+    });
 
     let enable_emotion = *get_emotion_compiler_config(next_config).await?;
 

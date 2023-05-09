@@ -261,21 +261,17 @@ pub async fn get_server_module_options_context(
         ..Default::default()
     });
 
-    let enable_webpack_loaders = {
-        let options = &*next_config.webpack_loaders_options().await?;
-        let loaders_options = WebpackLoadersOptions {
-            extension_to_loaders: options.clone(),
+    let webpack_rules =
+        *maybe_add_babel_loader(project_path, *next_config.webpack_rules().await?).await?;
+    let enable_webpack_loaders = webpack_rules.map(|rules| {
+        WebpackLoadersOptions {
+            rules: rules.clone(),
             loader_runner_package: Some(get_external_next_compiled_package_mapping(
                 StringVc::cell("loader-runner".to_owned()),
             )),
-            placeholder_for_future_extensions: (),
         }
-        .cell();
-
-        maybe_add_babel_loader(project_path, loaders_options)
-            .await?
-            .clone_if()
-    };
+        .cell()
+    });
 
     let tsconfig = get_typescript_transform_options(project_path);
     let decorators_options = get_decorators_transform_options(project_path);
