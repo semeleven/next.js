@@ -50,7 +50,7 @@ use crate::{
     next_config::NextConfigVc,
     next_import_map::{
         get_next_client_fallback_import_map, get_next_client_import_map,
-        get_next_client_resolved_map,
+        get_next_client_resolved_map, mdx_import_source_file,
     },
     next_shared::{
         resolve::UnsupportedModulesResolvePluginVc, transforms::get_relay_transform_plugin,
@@ -177,7 +177,8 @@ pub async fn get_client_module_options_context(
 
     let tsconfig = get_typescript_transform_options(project_path);
     let decorators_options = get_decorators_transform_options(project_path);
-    let mdx_rs_options = *next_config.mdx_rs().await?;
+    let enable_mdx_rs = *next_config.mdx_rs().await?;
+    let mdx_provider_import_source = enable_mdx_rs.then(mdx_import_source_file);
     let jsx_runtime_options = get_jsx_transform_options(project_path);
     let enable_webpack_loaders = {
         let options = &*next_config.webpack_loaders_options().await?;
@@ -242,7 +243,8 @@ pub async fn get_client_module_options_context(
         }),
         enable_webpack_loaders,
         enable_typescript_transform: Some(tsconfig),
-        enable_mdx_rs: mdx_rs_options,
+        enable_mdx_rs,
+        mdx_provider_import_source,
         decorators: Some(decorators_options),
         rules: vec![
             (
